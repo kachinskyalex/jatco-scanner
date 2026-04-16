@@ -25,10 +25,8 @@ jobs:
       - name: Build with Buildozer
         run: |
           buildozer init
-          # Авто-настройка конфига
           sed -i 's/^requirements = .*/requirements = python3,flet==0.21.2,hostpython3,opencv-python,numpy/' buildozer.spec
           sed -i 's/^# android.permissions = .*/android.permissions = CAMERA,WRITE_EXTERNAL_STORAGE/' buildozer.spec
-          # Принудительная сборка
           yes | buildozer -v android debug
 
       - name: Upload APK
