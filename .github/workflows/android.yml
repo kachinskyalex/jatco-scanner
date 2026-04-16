@@ -4,8 +4,6 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -15,23 +13,26 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-
-      - name: Install Buildozer and Cython
-        run: |
           pip install --upgrade buildozer Cython==0.29.33 flet
 
-      - name: Build with Buildozer
+      - name: Build APK
         run: |
-          # Создаем конфиг с нуля, чтобы не было ошибок чтения
           buildozer init
+          # Настраиваем спецификацию: добавляем нужные либы и фиксируем API
           sed -i 's/^requirements = .*/requirements = python3,flet==0.21.2,hostpython3,opencv-python,numpy/' buildozer.spec
           sed -i 's/^# android.permissions = .*/android.permissions = CAMERA,WRITE_EXTERNAL_STORAGE/' buildozer.spec
-          sed -i 's/^# android.archs = .*/android.archs = arm64-v8a/' buildozer.spec
+          sed -i 's/^# android.api = .*/android.api = 33/' buildozer.spec
+          sed -i 's/^# android.accept_sdk_license = .*/android.accept_sdk_license = True/' buildozer.spec
+          
+          # Запуск сборки
           yes | buildozer -v android debug
+        env:
+          # Эти переменные помогают Buildozer найти Java в облаке GitHub
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
