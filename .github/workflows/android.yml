@@ -5,25 +5,34 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Python
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install Buildozer
+
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-          pip install --upgrade buildozer Cython==0.29.33
-      - name: Build APK
+
+      - name: Install Buildozer and Cython
+        run: |
+          pip install --upgrade buildozer Cython==0.29.33 flet
+
+      - name: Build with Buildozer
         run: |
           buildozer init
-          # Настраиваем конфиг автоматически
+          # Авто-настройка конфига
           sed -i 's/^requirements = .*/requirements = python3,flet==0.21.2,hostpython3,opencv-python,numpy/' buildozer.spec
           sed -i 's/^# android.permissions = .*/android.permissions = CAMERA,WRITE_EXTERNAL_STORAGE/' buildozer.spec
+          # Принудительная сборка
           yes | buildozer -v android debug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: jatco-scanner-apk
+          name: jatco-scanner-app
           path: bin/*.apk
